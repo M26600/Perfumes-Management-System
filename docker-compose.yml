@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # PHP Apache Web Server
+  web:
+    build: .
+    container_name: perfume_web
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./images/uploads:/var/www/html/images/uploads
+    depends_on:
+      - db
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+    networks:
+      - perfume_network
+
+  # MySQL Database
+  db:
+    image: mysql:5.7
+    container_name: perfume_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: perfume_db
+      MYSQL_USER: perfume_user
+      MYSQL_PASSWORD: perfume_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - perfume_network
+
+  # phpMyAdmin (Optional - for database management)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: perfume_phpmyadmin
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      # Match MySQL credentials from the "db" service above
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    depends_on:
+      - db
+    networks:
+      - perfume_network
+
+volumes:
+  db_data:
+    driver: local
+
+networks:
+  perfume_network:
+    driver: bridge
+
+
